@@ -1,215 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Secure Voting DApp on Polygon network" />
   <title>Secure Voting DApp (Polygon)</title>
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
-  <style>
-    body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f7f9fc;
-      margin: 0;
-      padding: 20px;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-      color: #4b0082;
-    }
-    #container {
-      max-width: 700px;
-      margin: 0 auto;
-      background: white;
-      padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    button {
-      background: #4b0082;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    button:hover {
-      background: #673ab7;
-    }
-    #wallet {
-      font-weight: bold;
-      color: #333;
-      margin-top: 10px;
-    }
-    #candidateList button {
-      display: block;
-      width: 100%;
-      margin: 8px 0;
-    }
-    input {
-      width: 95%;
-      padding: 8px;
-      margin: 6px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    #results {
-      margin-top: 20px;
-      background: #f1f1f1;
-      padding: 10px;
-      border-radius: 10px;
-    }
-  </style>
+  <!-- Web3.js dependency -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js" defer></script>
+
+  <!-- project styles (external) -->
+  <link rel="stylesheet" href="css/style.css" />
+
 </head>
+
 <body>
-  <div id="container">
+  <main id="container">
     <h1>Secure Voting DApp</h1>
 
     <button id="connectBtn">🔗 Connect Wallet</button>
     <p id="wallet">Not connected</p>
 
-    <hr>
+    <hr />
 
-    <div id="adminSection">
-      <h3>Admin: Register Voter</h3>
-      <input id="voterAddress" placeholder="Enter voter wallet address">
+    <section id="adminSection">
+      <h2>Admin: Register Voter</h2>
+      <input id="voterAddress" type="text" placeholder="Enter voter wallet address" />
       <button id="registerBtn">Register Voter</button>
-    </div>
+    </section>
 
-    <hr>
+    <hr />
 
-    <h3>Candidates</h3>
-    <div id="candidateList">Loading...</div>
+    <section id="candidatesSection">
+      <h2>Candidates</h2>
+      <div id="candidateList">Loading...</div>
+    </section>
 
-    <hr>
+    <hr />
 
-    <h3>Results</h3>
-    <div id="results">No results yet.</div>
-  </div>
+    <section id="resultsSection">
+      <h2>Results</h2>
+      <div id="results">No results yet.</div>
+    </section>
+  </main>
 
-  <script>
-    // Contract configuration
-    const contractAddress = "0x0be71bc6118C4658D2c22fdbdB2D90b083D400c9";
-    const abi = [
-      {"inputs":[{"internalType":"address","name":"_voter","type":"address"}],"name":"registerVoter","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address[]","name":"_voters","type":"address[]"}],"name":"registerVoters","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"string[]","name":"_candidateNames","type":"string[]"}],"stateMutability":"nonpayable","type":"constructor"},
-      {"inputs":[{"internalType":"uint256","name":"candidateIndex","type":"uint256"}],"name":"vote","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"candidateIndex","type":"uint256"}],"name":"Voted","type":"event"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"}],"name":"VoterRegistered","type":"event"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"},{"indexed":false,"internalType":"uint256","name":"count","type":"uint256"}],"name":"VotersBatchRegistered","type":"event"},
-      {"inputs":[],"name":"admin","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"candidates","outputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"uint256","name":"voteCount","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"getCandidates","outputs":[{"components":[{"internalType":"string","name":"name","type":"string"},{"internalType":"uint256","name":"voteCount","type":"uint256"}],"internalType":"struct SecureVoting.Candidate[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"_addr","type":"address"}],"name":"getVoter","outputs":[{"internalType":"bool","name":"isRegistered","type":"bool"},{"internalType":"bool","name":"hasVoted","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"voters","outputs":[{"internalType":"bool","name":"isRegistered","type":"bool"},{"internalType":"bool","name":"hasVoted","type":"bool"}],"stateMutability":"view","type":"function"}
-    ];
-
-    let web3, contract, account, admin;
-
-    // ✅ Connect wallet (supports Rabby or MetaMask)
-    async function connectWallet() {
-      try {
-        let provider = null;
-
-        if (window.rabby) {
-          provider = window.rabby;
-        } else if (window.ethereum && window.ethereum.isRabby) {
-          provider = window.ethereum;
-        } else if (window.ethereum) {
-          provider = window.ethereum; // fallback for MetaMask
-        }
-
-        if (!provider) {
-          alert("⚠️ Please install or enable Rabby Wallet.");
-          return;
-        }
-
-        web3 = new Web3(provider);
-        await provider.request({ method: "eth_requestAccounts" });
-        const accounts = await web3.eth.getAccounts();
-        account = accounts[0];
-        document.getElementById("wallet").innerText = `Connected: ${account}`;
-
-        const chainId = await web3.eth.getChainId();
-        if (chainId !== 137 && chainId !== 80002) {
-          alert("⚠️ Switch to Polygon Mainnet or Amoy Testnet in Rabby!");
-          return;
-        }
-
-        contract = new web3.eth.Contract(abi, contractAddress);
-        admin = await contract.methods.admin().call();
-
-        await loadCandidates();
-      } catch (err) {
-        console.error(err);
-        alert("Connection failed: " + err.message);
-      }
-    }
-
-    // ✅ Register voter (only admin)
-    async function registerVoter() {
-      const voter = document.getElementById("voterAddress").value.trim();
-      if (!voter) return alert("Enter voter address.");
-      if (!contract) return alert("Connect wallet first.");
-      if (account.toLowerCase() !== admin.toLowerCase())
-        return alert("Only admin can register voters.");
-
-      try {
-        await contract.methods.registerVoter(voter).send({ from: account });
-        alert(`✅ Voter ${voter} registered successfully!`);
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    }
-
-    // ✅ Load candidates from blockchain
-    async function loadCandidates() {
-      try {
-        const candidates = await contract.methods.getCandidates().call();
-        const div = document.getElementById("candidateList");
-        div.innerHTML = "";
-        for (let i = 0; i < candidates.length; i++) {
-          const btn = document.createElement("button");
-          btn.innerText = `${candidates[i].name}`;
-          btn.onclick = () => vote(i);
-          div.appendChild(btn);
-        }
-        showResults();
-      } catch (err) {
-        document.getElementById("candidateList").innerText = "Failed to load candidates.";
-      }
-    }
-
-    // ✅ Vote
-    async function vote(index) {
-      try {
-        const voterInfo = await contract.methods.getVoter(account).call();
-        if (!voterInfo.isRegistered) return alert("You are not registered to vote.");
-        if (voterInfo.hasVoted) return alert("You have already voted.");
-
-        await contract.methods.vote(index).send({ from: account });
-        alert("✅ Vote submitted successfully!");
-        showResults();
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    }
-
-    // ✅ Show live results
-    async function showResults() {
-      const candidates = await contract.methods.getCandidates().call();
-      const res = document.getElementById("results");
-      res.innerHTML = "";
-      candidates.forEach(c => {
-        res.innerHTML += `<p><b>${c.name}</b>: ${c.voteCount} votes</p>`;
-      });
-    }
-
-    // Event listeners
-    document.getElementById("connectBtn").onclick = connectWallet;
-    document.getElementById("registerBtn").onclick = registerVoter;
-  </script>
+  <!-- project script -->
+  <script src="js/app.js" defer></script>
 </body>
+
 </html>

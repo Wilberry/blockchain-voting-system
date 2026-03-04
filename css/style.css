@@ -1,0 +1,65 @@
+/* Base layout */
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f7f9fc;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+h1, h2 {
+  text-align: center;
+  color: #4b0082;
+}
+
+#container {
+  max-width: 700px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+button {
+  background: #4b0082;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #673ab7;
+}
+
+#wallet {
+  font-weight: bold;
+  color: #333;
+  margin-top: 10px;
+  text-align: center;
+}
+
+#candidateList button {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+}
+
+input {
+  width: 95%;
+  padding: 8px;
+  margin: 6px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+#results {
+  margin-top: 20px;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 10px;
+}
